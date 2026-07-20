@@ -210,7 +210,7 @@ export async function getLatestProjectTag(
     projectId: number,
 ): Promise<GitLabTag | null> {
     const url = createApiUrl(config.baseUrl, `/projects/${projectId}/repository/tags`, {
-        order_by: 'updated',
+        order_by: 'version',
         sort: 'desc',
         per_page: 1,
     })
