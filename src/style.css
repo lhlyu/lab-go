@@ -149,6 +149,22 @@ button:disabled {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+.field-hint a {
+    color: var(--gray-700);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.field-hint a:hover {
+    color: var(--black);
+}
+
+.field-hint a[aria-disabled='true'] {
+    color: var(--gray-500);
+    cursor: default;
+    text-decoration: none;
+}
+
 .token-field {
     position: relative;
 }
@@ -230,6 +246,40 @@ button:disabled {
     text-align: center;
 }
 
+.login-project-link {
+    display: flex;
+    justify-content: center;
+    margin-top: 14px;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 9px;
+    gap: 6px;
+    border-radius: 6px;
+    color: var(--gray-700);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    transition:
+        color 150ms ease,
+        background 150ms ease;
+}
+
+.github-link:hover {
+    color: var(--black);
+    background: var(--gray-100);
+}
+
+.github-link svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    fill: currentColor;
+}
+
 .dashboard-page {
     height: 100vh;
     height: 100dvh;
@@ -251,6 +301,12 @@ button:disabled {
     justify-content: space-between;
     padding: 0 24px;
     background: var(--white);
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .brand,

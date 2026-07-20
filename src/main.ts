@@ -26,8 +26,26 @@ import { openTagDialog } from './tag-dialog.ts'
 import { getErrorMessage, mapWithConcurrency } from './utils.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
+const GITHUB_REPOSITORY_URL = 'https://github.com/lhlyu/lab-go'
 const selectedProjectIds = new Set<number>()
 let projectRequestVersion = 0
+
+function githubRepositoryLink(label: string): string {
+    return `
+      <a
+        class="github-link"
+        href="${GITHUB_REPOSITORY_URL}"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="在 GitHub 查看 LabGo 开源仓库"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.59 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-1.05-.01-1.9-2.78.62-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 7.16a9.3 9.3 0 0 1 2.5.35c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.59.69.49A10.25 10.25 0 0 0 22 12.25C22 6.59 17.52 2 12 2Z" />
+        </svg>
+        <span>${label}</span>
+      </a>
+    `
+}
 
 function renderLogin(message = '', preferredBaseUrl = ''): void {
     stopPipelineRefresh()
@@ -39,7 +57,7 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
         <div class="card-heading">
           <p class="eyebrow">LabGo</p>
           <h1 id="login-title">连接 GitLab</h1>
-          <p>输入实例地址和 Personal Access Token。</p>
+          <p>输入实例地址和 Personal Access Token</p>
         </div>
 
         <form id="connection-form" novalidate>
@@ -52,7 +70,10 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
             <input id="gitlab-token" name="token" type="password" autocomplete="off" required />
             <button id="toggle-token" type="button" aria-label="显示 Token">显示</button>
           </div>
-          <p class="field-hint">创建合并请求或 Tag 需要授予 <code>api</code> 权限。</p>
+          <p class="field-hint">
+            创建合并请求或 Tag 需要授予
+            <a id="token-settings-link" target="_blank" rel="noopener noreferrer"><code>api</code> 权限</a>
+          </p>
 
           <p id="form-message" class="form-message" aria-live="polite"></p>
           <button id="connect-button" class="primary-button" type="submit">
@@ -61,7 +82,8 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
           </button>
         </form>
 
-        <p class="security-note">请仅在可信设备上使用。Token 将保存在当前浏览器的 localStorage 中。</p>
+        <p class="security-note">请仅在可信设备上使用，Token 将保存在当前浏览器的 localStorage 中</p>
+        <div class="login-project-link">${githubRepositoryLink('GitHub 开源仓库')}</div>
       </section>
     </main>
   `
@@ -69,6 +91,7 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
     const form = document.querySelector<HTMLFormElement>('#connection-form')!
     const urlInput = document.querySelector<HTMLInputElement>('#gitlab-url')!
     const tokenInput = document.querySelector<HTMLInputElement>('#gitlab-token')!
+    const tokenSettingsLink = document.querySelector<HTMLAnchorElement>('#token-settings-link')!
     const toggleToken = document.querySelector<HTMLButtonElement>('#toggle-token')!
     const submitButton = document.querySelector<HTMLButtonElement>('#connect-button')!
     const formMessage = document.querySelector<HTMLParagraphElement>('#form-message')!
@@ -76,6 +99,20 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
     urlInput.value = preferredBaseUrl || readStoredValue(STORAGE_KEYS.baseUrl) || DEFAULT_GITLAB_URL
     formMessage.textContent = message
     formMessage.hidden = !message
+
+    const updateTokenSettingsLink = (): void => {
+        try {
+            const baseUrl = normalizeGitLabUrl(urlInput.value)
+            tokenSettingsLink.href = `${baseUrl}/-/user_settings/personal_access_tokens`
+            tokenSettingsLink.removeAttribute('aria-disabled')
+        } catch {
+            tokenSettingsLink.removeAttribute('href')
+            tokenSettingsLink.setAttribute('aria-disabled', 'true')
+        }
+    }
+
+    updateTokenSettingsLink()
+    urlInput.addEventListener('input', updateTokenSettingsLink)
 
     toggleToken.addEventListener('click', () => {
         const shouldShow = tokenInput.type === 'password'
@@ -89,7 +126,7 @@ function renderLogin(message = '', preferredBaseUrl = ''): void {
         formMessage.hidden = true
 
         if (!urlInput.value.trim() || !tokenInput.value.trim()) {
-            formMessage.textContent = '请完整填写 GitLab 地址和 Personal Access Token。'
+            formMessage.textContent = '请完整填写 GitLab 地址和 Personal Access Token'
             formMessage.hidden = false
             return
         }
@@ -173,7 +210,10 @@ function renderDashboard(config: GitLabConfig): void {
             <a id="instance-name" target="_blank" rel="noopener noreferrer"></a>
           </div>
         </div>
-        <button id="change-connection" class="secondary-button" type="button">更换连接</button>
+        <div class="topbar-actions">
+          ${githubRepositoryLink('GitHub')}
+          <button id="change-connection" class="secondary-button" type="button">更换连接</button>
+        </div>
       </header>
 
       <main class="workspace">
@@ -228,7 +268,7 @@ async function loadGroups(config: GitLabConfig): Promise<void> {
     if (!groupList || !projectList) return
 
     groupList.replaceChildren(createState('正在加载', '正在获取你的项目组…'))
-    projectList.replaceChildren(createState('等待项目组', '项目组加载完成后，将自动展示直属项目。'))
+    projectList.replaceChildren(createState('等待项目组', '项目组加载完成后，将自动展示直属项目'))
 
     try {
         const groups = await listGroups(config)
@@ -240,7 +280,7 @@ async function loadGroups(config: GitLabConfig): Promise<void> {
         groupList.replaceChildren(
             createState('项目组加载失败', getErrorMessage(error), () => void loadGroups(config)),
         )
-        projectList.replaceChildren(createState('暂时无法展示项目', '请先重新加载左侧项目组。'))
+        projectList.replaceChildren(createState('暂时无法展示项目', '请先重新加载左侧项目组'))
     }
 }
 
@@ -256,12 +296,10 @@ function renderGroups(config: GitLabConfig, groups: GitLabGroup[]): void {
     groupList.replaceChildren()
 
     if (groups.length === 0) {
-        groupList.append(createState('暂无项目组', '当前用户还没有加入任何项目组。'))
+        groupList.append(createState('暂无项目组', '当前用户还没有加入任何项目组'))
         projectHeading.textContent = '暂无项目'
         projectCount.textContent = '0'
-        projectList.replaceChildren(
-            createState('暂无可展示内容', '加入项目组后，项目会显示在这里。'),
-        )
+        projectList.replaceChildren(createState('暂无可展示内容', '加入项目组后，项目会显示在这里'))
         return
     }
 
@@ -354,7 +392,7 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     projectList.replaceChildren()
 
     if (projects.length === 0) {
-        projectList.append(createState('暂无直属项目', '这个项目组当前没有可访问的直属项目。'))
+        projectList.append(createState('暂无直属项目', '这个项目组当前没有可访问的直属项目'))
         return
     }
 
@@ -499,15 +537,7 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         pipelineContainers.set(project.id, pipelineState)
 
         info.append(link, description)
-        row.append(
-            checkbox,
-            id,
-            info,
-            defaultBranch,
-            latestTag,
-            pipelineState,
-            rowActions,
-        )
+        row.append(checkbox, id, info, defaultBranch, latestTag, pipelineState, rowActions)
         projectList.append(row)
     }
 

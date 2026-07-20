@@ -59,7 +59,7 @@ export function openMergeRequestDialog(
         <label for="merge-request-description">描述</label>
         <textarea id="merge-request-description" rows="4" placeholder="可选" disabled></textarea>
 
-        <p class="merge-policy-note">合并后保留源分支，不压缩提交。</p>
+        <p class="merge-policy-note">合并后保留源分支，不压缩提交</p>
         <p id="merge-request-message" class="dialog-message" aria-live="polite"></p>
 
         <div class="dialog-footer">
@@ -120,7 +120,7 @@ export function openMergeRequestDialog(
             }
 
             if (branches.length < 2) {
-                message.textContent = '至少需要两个分支才能创建合并请求。'
+                message.textContent = '至少需要两个分支才能创建合并请求'
                 return
             }
 
@@ -153,13 +153,13 @@ export function openMergeRequestDialog(
         const title = titleInput.value.trim()
 
         if (sourceBranch === targetBranch) {
-            message.textContent = '源分支和目标分支不能相同。'
+            message.textContent = '源分支和目标分支不能相同'
             sourceSelect.focus()
             return
         }
 
         if (!title) {
-            message.textContent = '请输入合并请求标题。'
+            message.textContent = '请输入合并请求标题'
             titleInput.focus()
             return
         }

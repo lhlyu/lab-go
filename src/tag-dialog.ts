@@ -148,7 +148,7 @@ export function openTagDialog(
         <section id="tag-confirmation" class="tag-confirmation" hidden>
           <strong id="tag-confirmation-summary"></strong>
           <ul id="tag-check-list"></ul>
-          <p>创建 Tag 可能触发项目的 CI/CD 流水线，权限由 GitLab 最终校验。</p>
+          <p>创建 Tag 可能触发项目的 CI/CD 流水线，权限由 GitLab 最终校验</p>
         </section>
 
         <div class="dialog-footer">
@@ -228,13 +228,13 @@ export function openTagDialog(
         const customRef = customRefInput.value.trim()
 
         if (!tagName) {
-            message.textContent = '请输入 Tag 名称。'
+            message.textContent = '请输入 Tag 名称'
             tagNameInput.focus()
             return
         }
 
         if (refMode.value === 'custom' && !customRef) {
-            message.textContent = '请输入来源分支名称。'
+            message.textContent = '请输入来源分支名称'
             customRefInput.focus()
             return
         }
