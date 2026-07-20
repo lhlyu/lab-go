@@ -14,7 +14,6 @@ export interface GitLabProject {
     name: string
     description: string | null
     default_branch: string | null
-    last_activity_at: string
     web_url: string
 }
 

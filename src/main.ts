@@ -341,20 +341,6 @@ function resetProjectActions(): void {
     if (batchButton) batchButton.hidden = true
 }
 
-function formatActivityTime(value: string): string {
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ''
-
-    return new Intl.DateTimeFormat('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).format(date)
-}
-
 function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     const projectList = document.querySelector<HTMLElement>('#project-list')!
     const projectCount = document.querySelector<HTMLSpanElement>('#project-count')!
@@ -392,9 +378,6 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     const latestTagHeading = document.createElement('span')
     latestTagHeading.textContent = '最新 Tag'
 
-    const activityHeading = document.createElement('span')
-    activityHeading.textContent = '最后活跃时间'
-
     const pipelineHeading = document.createElement('span')
     pipelineHeading.textContent = '流水线'
 
@@ -408,7 +391,6 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         infoHeading,
         defaultBranchHeading,
         latestTagHeading,
-        activityHeading,
         pipelineHeading,
         actionHeading,
     )
@@ -491,11 +473,6 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         latestTag.className = 'project-latest-tag'
         latestTagContainers.set(project.id, latestTag)
 
-        const activityTime = document.createElement('time')
-        activityTime.className = 'project-activity-time'
-        activityTime.dateTime = project.last_activity_at
-        activityTime.textContent = formatActivityTime(project.last_activity_at)
-
         const tagButton = document.createElement('button')
         tagButton.type = 'button'
         tagButton.className = 'row-action-button'
@@ -528,7 +505,6 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
             info,
             defaultBranch,
             latestTag,
-            activityTime,
             pipelineState,
             rowActions,
         )
