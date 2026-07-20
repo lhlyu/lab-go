@@ -9,13 +9,16 @@
     "fmt": "oxfmt",
     "lint": "tsc --noEmit && oxlint .",
     "lint:fix": "oxlint --fix",
-    "preview": "vite preview"
+    "preview": "bun run build && wrangler dev",
+    "deploy": "bun run build && wrangler deploy"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.45.1",
     "@types/bun": "^1.3.14",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "wrangler": "^4.112.0"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"
