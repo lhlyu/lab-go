@@ -1,6 +1,7 @@
 import './style.css'
 import {
     GitLabApiError,
+    getLatestProjectTag,
     listGroupProjects,
     listGroups,
     normalizeGitLabUrl,
@@ -22,7 +23,7 @@ import {
     STORAGE_KEYS,
 } from './storage.ts'
 import { openTagDialog } from './tag-dialog.ts'
-import { getErrorMessage } from './utils.ts'
+import { getErrorMessage, mapWithConcurrency } from './utils.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const selectedProjectIds = new Set<number>()
@@ -340,6 +341,20 @@ function resetProjectActions(): void {
     if (batchButton) batchButton.hidden = true
 }
 
+function formatActivityTime(value: string): string {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+
+    return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    }).format(date)
+}
+
 function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     const projectList = document.querySelector<HTMLElement>('#project-list')!
     const projectCount = document.querySelector<HTMLSpanElement>('#project-count')!
@@ -374,6 +389,12 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     const defaultBranchHeading = document.createElement('span')
     defaultBranchHeading.textContent = '默认分支'
 
+    const latestTagHeading = document.createElement('span')
+    latestTagHeading.textContent = '最新 Tag'
+
+    const activityHeading = document.createElement('span')
+    activityHeading.textContent = '最后活跃时间'
+
     const pipelineHeading = document.createElement('span')
     pipelineHeading.textContent = '流水线'
 
@@ -386,13 +407,25 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         idHeading,
         infoHeading,
         defaultBranchHeading,
+        latestTagHeading,
+        activityHeading,
         pipelineHeading,
         actionHeading,
     )
     projectList.append(header)
 
     const checkboxes = new Map<number, HTMLInputElement>()
+    const latestTagContainers = new Map<number, HTMLElement>()
     const pipelineContainers = new Map<number, HTMLElement>()
+    const handleTagComplete = (tagName: string, projectIds: number[]): void => {
+        resetProjectActions()
+        for (const projectId of projectIds) {
+            const container = latestTagContainers.get(projectId)
+            if (!container) continue
+            container.textContent = tagName
+            container.title = tagName
+        }
+    }
     const syncSelection = (): void => {
         selectAll.checked = selectedProjectIds.size === projects.length
         selectAll.indeterminate = selectedProjectIds.size > 0 && !selectAll.checked
@@ -412,7 +445,7 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
     batchButton.onclick = () => {
         const selectedProjects = projects.filter((project) => selectedProjectIds.has(project.id))
         if (selectedProjects.length > 0) {
-            openTagDialog(tagDialog, config, selectedProjects, resetProjectActions)
+            openTagDialog(tagDialog, config, selectedProjects, handleTagComplete)
         }
     }
 
@@ -454,12 +487,21 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         defaultBranchName.textContent = project.default_branch || '暂无'
         defaultBranch.append(defaultBranchName)
 
+        const latestTag = document.createElement('code')
+        latestTag.className = 'project-latest-tag'
+        latestTagContainers.set(project.id, latestTag)
+
+        const activityTime = document.createElement('time')
+        activityTime.className = 'project-activity-time'
+        activityTime.dateTime = project.last_activity_at
+        activityTime.textContent = formatActivityTime(project.last_activity_at)
+
         const tagButton = document.createElement('button')
         tagButton.type = 'button'
         tagButton.className = 'row-action-button'
         tagButton.textContent = '创建 Tag'
         tagButton.addEventListener('click', () =>
-            openTagDialog(tagDialog, config, [project], resetProjectActions),
+            openTagDialog(tagDialog, config, [project], handleTagComplete),
         )
 
         const mergeRequestButton = document.createElement('button')
@@ -480,11 +522,36 @@ function renderProjects(config: GitLabConfig, projects: GitLabProject[]): void {
         pipelineContainers.set(project.id, pipelineState)
 
         info.append(link, description)
-        row.append(checkbox, id, info, defaultBranch, pipelineState, rowActions)
+        row.append(
+            checkbox,
+            id,
+            info,
+            defaultBranch,
+            latestTag,
+            activityTime,
+            pipelineState,
+            rowActions,
+        )
         projectList.append(row)
     }
 
     const requestVersion = projectRequestVersion
+    void mapWithConcurrency(projects, 4, async (project) => {
+        const container = latestTagContainers.get(project.id)
+        if (!container || requestVersion !== projectRequestVersion) return
+
+        try {
+            const tag = await getLatestProjectTag(config, project.id)
+            if (requestVersion !== projectRequestVersion || !tag) return
+            container.textContent = tag.name
+            container.title = tag.name
+        } catch (error) {
+            if (requestVersion !== projectRequestVersion) return
+            if (error instanceof GitLabApiError && error.status === 401) {
+                handleAuthError(error, config)
+            }
+        }
+    })
     startPipelineRefresh(
         config,
         projects,

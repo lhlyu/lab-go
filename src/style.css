@@ -398,7 +398,7 @@ button:disabled {
 .project-table-header,
 .project-row {
     display: grid;
-    grid-template-columns: 24px 72px minmax(180px, 1fr) 104px 104px 146px;
+    grid-template-columns: 24px 72px minmax(180px, 1fr) 104px 104px 120px 104px 146px;
     align-items: center;
     min-height: 38px;
     padding: 0 10px;
@@ -492,6 +492,21 @@ button:disabled {
     font-size: 10px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.project-latest-tag,
+.project-activity-time {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--gray-700);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-latest-tag {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .pipeline-state {
@@ -877,8 +892,10 @@ button:disabled {
 
     .project-table-header,
     .project-row {
-        grid-template-columns: 20px minmax(140px, 1fr) 82px 76px 70px;
+        grid-template-columns: 20px minmax(140px, 1fr) 82px 84px 112px 76px 70px;
         gap: 8px;
+        width: max-content;
+        min-width: 100%;
     }
 
     .project-table-header > :nth-child(2),

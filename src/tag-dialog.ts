@@ -111,7 +111,7 @@ export function openTagDialog(
     dialog: HTMLDialogElement,
     config: GitLabConfig,
     projects: GitLabProject[],
-    onComplete: () => void,
+    onComplete: (tagName: string, projectIds: number[]) => void,
 ): void {
     const currentVersion = ++dialogVersion
     let stage: 'check' | 'create' = 'check'
@@ -301,7 +301,10 @@ export function openTagDialog(
                 reason: candidate.reason,
             }))
 
-        onComplete()
+        onComplete(
+            tagName,
+            createdResults.filter((result) => result.success).map((result) => result.project.id),
+        )
         showTagResults(dialog, tagName, [...createdResults, ...skippedResults])
     })
 

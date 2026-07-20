@@ -14,7 +14,12 @@ export interface GitLabProject {
     name: string
     description: string | null
     default_branch: string | null
+    last_activity_at: string
     web_url: string
+}
+
+export interface GitLabTag {
+    name: string
 }
 
 export interface GitLabBranch {
@@ -197,6 +202,19 @@ export async function getLatestProjectPipeline(
         per_page: 1,
     })
     const { data } = await request<GitLabPipeline[]>(config, url)
+    return data[0] ?? null
+}
+
+export async function getLatestProjectTag(
+    config: GitLabConfig,
+    projectId: number,
+): Promise<GitLabTag | null> {
+    const url = createApiUrl(config.baseUrl, `/projects/${projectId}/repository/tags`, {
+        order_by: 'updated',
+        sort: 'desc',
+        per_page: 1,
+    })
+    const { data } = await request<GitLabTag[]>(config, url)
     return data[0] ?? null
 }
 
